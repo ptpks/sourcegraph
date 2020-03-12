@@ -95,6 +95,18 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		}
 	}
 
+	// Count total unique search users per period
+	totalUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
+		EventFilters: &db.EventFilterOptions{ByEventName: "SearchResultsQueried"},
+	})
+	if err != nil {
+		for i, uniqueUserCounts := range totalUniqueUsers {
+			activityPeriods[i].StartTime = uniqueUserCounts.Start
+			activityPeriods[i].TotalUsers.UserCount = int32(uniqueUserCounts.Count)
+		}
+	}
+
+	// Count total unique users and events of each search mode per period
 	searchModeNameToArgumentMatches := map[string]struct {
 		eventName          string
 		argumentName       string
